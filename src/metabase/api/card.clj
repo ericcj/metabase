@@ -772,6 +772,7 @@ saved later when it is ready."
   [card-id export-format :as {{:keys [parameters]} :params}]
   {parameters    (s/maybe su/JSONString)
    export-format api.dataset/ExportFormat}
+  (def xpp parameters)
   (qp.card/run-query-for-card-async
    card-id export-format
    :parameters  (json/parse-string parameters keyword)

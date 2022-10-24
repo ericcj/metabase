@@ -203,6 +203,10 @@
                        :dashboard-id dashboard-id}
                 (and (:dataset card) (seq (:result_metadata card)))
                 (assoc :metadata/dataset-metadata (:result_metadata card)))]
+    (def xq query)
+    (def xi info)
+    (def xc context)
+    (def xcid card-id)
     (api/check-not-archived card)
     (api/check-is-readonly card)
     (when (seq parameters)
@@ -210,3 +214,14 @@
     (log/tracef "Running query for Card %d:\n%s" card-id
                 (u/pprint-to-str query))
     (run query info)))
+
+
+(comment
+
+
+(let [pivot-chan (binding [qp.perms/*card-id* xcid]
+                                                  (qp/process-query-and-save-execution! xq xi nil))]
+                                 (go
+                                   (println (<! ppchan))))
+
+  )

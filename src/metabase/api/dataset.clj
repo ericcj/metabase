@@ -112,6 +112,7 @@
   {query                  su/JSONString
    visualization_settings su/JSONString
    export-format          ExportFormat}
+  (def x-ogq query)
   (let [query        (json/parse-string query keyword)
         viz-settings (-> (json/parse-string visualization_settings viz-setting-key-fn)
                          (update-in [:table.columns] mbql.normalize/normalize)
@@ -125,6 +126,9 @@
                                                   (assoc :process-viz-settings? true
                                                          :skip-results-metadata? true
                                                          :format-rows? false))))]
+    (def xq query)
+    (def xef export-format)
+    (def xvs visualization_settings)
     (run-query-async
      query
      :export-format export-format
@@ -145,6 +149,7 @@
   "Generate a pivoted dataset for an ad-hoc query"
   [:as {{:keys [database] :as query} :body}]
   {database (s/maybe s/Int)}
+  (def pq query)
   (when-not database
     (throw (Exception. (str (tru "`database` is required for all queries.")))))
   (api/read-check Database database)

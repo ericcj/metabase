@@ -201,8 +201,7 @@
       (qp/process-query (dissoc first-query :info) context))))
 
 (defn run-pivot-query
-  "Run the pivot query. Unlike many query execution functions, this takes `context` as the first parameter to support
-   its application via `partial`.
+  "Run the pivot query.
 
    You are expected to wrap this call in `qp.streaming/streaming-response` yourself."
   ([query]
