@@ -9,10 +9,8 @@ export const ActionCreatorRoot = styled.div`
 `;
 
 export const ActionCreatorBodyContainer = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
   border-top: 1px solid ${color("border")};
-  grid-gap: ${space(2)};
   .react-resizable-handle {
     display: none;
   }
@@ -21,8 +19,9 @@ export const ActionCreatorBodyContainer = styled.div`
 `;
 
 export const EditorContainer = styled.div`
+  flex: 1 1 0;
+  transition: flex 500ms ease-in-out;
   position: relative;
   margin-left: ${space(2)};
-  flex: 1;
   overflow-y: auto;
 `;

@@ -24,6 +24,10 @@ import type Metadata from "metabase-lib/metadata/Metadata";
 import { ActionCreatorHeader } from "./ActionCreatorHeader";
 import { QueryActionEditor } from "./QueryActionEditor";
 import { FormCreator } from "./FormCreator";
+import {
+  DataReferenceTriggerButton,
+  DataReferenceInline,
+} from "./InlineDataReference";
 
 import {
   ActionCreatorRoot,
@@ -66,6 +70,8 @@ function ActionCreatorComponent({
   >(undefined);
   const [showSaveModal, setShowSaveModal] = useState(false);
 
+  const [showDataRef, setShowDataRef] = useState(false);
+
   useEffect(() => {
     setQuestion(passedQuestion ?? newQuestion(metadata));
 
@@ -105,8 +111,17 @@ function ActionCreatorComponent({
         onSave={() => setShowSaveModal(true)}
         canSave={question.query().canRun()}
       />
+
       <ActionCreatorBodyContainer>
-        <QueryActionEditor question={question} setQuestion={setQuestion} />
+        <QueryActionEditor
+          question={question}
+          setQuestion={setQuestion}
+          toggleDataRef={() => setShowDataRef(prev => !prev)}
+        />
+        <DataReferenceInline
+          isOpen={showDataRef}
+          onClose={() => setShowDataRef(false)}
+        />
         <FormCreator
           tags={query?.templateTagsWithoutSnippets()}
           formSettings={
