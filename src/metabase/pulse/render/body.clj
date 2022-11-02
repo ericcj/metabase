@@ -527,14 +527,16 @@
         "line"))
 
 (defn- join-series
-  [names colors types row-seqs y-axis-positions]
-  (vec (for [[card-name card-color card-type rows y-axis-position]
-             (map vector names colors types row-seqs y-axis-positions)]
-         {:name          card-name
-          :color         card-color
-          :type          card-type
-          :data          rows
-          :yAxisPosition y-axis-position})))
+  [names types row-seqs y-axis-positions y-col]
+  (for [[idx [card-name card-type rows y-axis-position]]
+        (map-indexed vector (map vector names types row-seqs y-axis-positions))]
+    {:name          card-name
+     :type          card-type
+     :data          rows
+     :yAxisPosition y-axis-position
+     :seriesKey     (cond
+                      (= idx 0) (:name y-col)
+                      :else card-name)}))
 
 (defn- attach-image-bundle
   [image-bundle]
@@ -567,11 +569,10 @@
         [x-col y-col] ((juxt (first first-rowfns) (second first-rowfns)) (first col-seqs))
         labels        (x-and-y-axis-label-info x-col y-col viz-settings)
         names         (map :name cards)
-        colors        (take (count multi-data) colors)
         types         (replace {:scalar :bar} (map :display cards))
         settings      (->ts-viz x-col y-col labels viz-settings)
         y-pos         (take (count names) (default-y-pos viz-settings))
-        series        (join-series names colors types row-seqs y-pos)]
+        series        (join-series names types row-seqs y-pos y-col)]
     (attach-image-bundle (image-bundle/make-image-bundle render-type (js-svg/combo-chart series settings)))))
 
 (defn- multiple-scalar-series
@@ -620,8 +621,6 @@
           card-name     (or (series-setting viz-settings y-col-key :name)
                             (series-setting viz-settings y-col-key :title)
                             (:display_name y-col))
-          card-color    (or (series-setting viz-settings y-col-key :color)
-                            (nth colors idx))
           card-type     (or (series-setting viz-settings y-col-key :display)
                             chart-type
                             (nth default-combo-chart-types idx))
@@ -629,10 +628,10 @@
           y-axis-pos    (or (series-setting viz-settings y-col-key :axis)
                             (nth (default-y-pos viz-settings) idx))]
       {:name          card-name
-       :color         card-color
        :type          card-type
        :data          selected-rows
-       :yAxisPosition y-axis-pos})))
+       :yAxisPosition y-axis-pos
+       :seriesKey    (name y-col-key)})))
 
 (defn- double-x-axis-combo-series
   "This munges rows and columns into series in the format that we want for combo staticviz for literal combo displaytype,
@@ -640,7 +639,7 @@
 
   This mimics default behavior in JS viz, which is to group by the second dimension and make every group-by-value a series.
   This can have really high cardinality of series but the JS viz will complain about more than 100 already"
-  [chart-type joined-rows _x-cols _y-cols viz-settings]
+  [chart-type joined-rows x-cols _y-cols viz-settings]
   (let [grouped-rows (group-by #(second (first %)) joined-rows)
         groups       (keys grouped-rows)]
     (for [[idx group-key] (map-indexed vector groups)]
@@ -649,18 +648,16 @@
             card-name          (or (series-setting viz-settings group-key :name)
                                    (series-setting viz-settings group-key :title)
                                    group-key)
-            card-color         (or (series-setting viz-settings group-key :color)
-                                   (nth colors idx))
             card-type          (or (series-setting viz-settings group-key :display)
                                    chart-type
                                    (nth default-combo-chart-types idx))
             y-axis-pos         (or (series-setting viz-settings group-key :axis)
                                    (nth (default-y-pos viz-settings) idx))]
         {:name          card-name
-         :color         card-color
          :type          card-type
          :data          selected-row-group
-         :yAxisPosition y-axis-pos}))))
+         :yAxisPosition y-axis-pos
+         :column        (second x-cols)}))))
 
 (defn- lab-image-bundle
   "Generate an image-bundle for a Line Area Bar chart (LAB)
