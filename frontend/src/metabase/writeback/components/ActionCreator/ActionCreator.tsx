@@ -4,6 +4,7 @@ import _ from "underscore";
 import { connect } from "react-redux";
 import { push } from "react-router-redux";
 
+import { useToggle } from "metabase/hooks/use-toggle";
 import Actions from "metabase/entities/actions";
 import Database from "metabase/entities/databases";
 import { getMetadata } from "metabase/selectors/metadata";
@@ -70,7 +71,8 @@ function ActionCreatorComponent({
   >(undefined);
   const [showSaveModal, setShowSaveModal] = useState(false);
 
-  const [showDataRef, setShowDataRef] = useState(false);
+  const [isDataRefOpen, { toggle: toggleDataRef, turnOff: closeDataRef }] =
+    useToggle(false);
 
   useEffect(() => {
     setQuestion(passedQuestion ?? newQuestion(metadata));
@@ -116,12 +118,9 @@ function ActionCreatorComponent({
         <QueryActionEditor
           question={question}
           setQuestion={setQuestion}
-          toggleDataRef={() => setShowDataRef(prev => !prev)}
+          toggleDataRef={toggleDataRef}
         />
-        <DataReferenceInline
-          isOpen={showDataRef}
-          onClose={() => setShowDataRef(false)}
-        />
+        <DataReferenceInline isOpen={isDataRefOpen} onClose={closeDataRef} />
         <FormCreator
           tags={query?.templateTagsWithoutSnippets()}
           formSettings={
