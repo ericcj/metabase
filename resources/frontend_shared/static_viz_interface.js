@@ -58,13 +58,14 @@ function categorical_donut(rows, colors, settings) {
   return StaticViz.RenderChart("categorical/donut", {
     data: toJSArray(rows),
     colors: toJSMap(colors),
-    settings: JSON.parse(settings)
+    settings: JSON.parse(settings),
   });
 }
 
-function progress(data, settings) {
+function progress(data, settings, colors) {
   return StaticViz.RenderChart("progress", {
     data: JSON.parse(data),
     settings: JSON.parse(settings),
+    colors: JSON.parse(colors),
   });
 }
