@@ -17,7 +17,7 @@
   "Generate a powerset while maintaining the original ordering as much as possible"
   [xs]
   (for [combo (reverse (range (int (Math/pow 2 (count xs)))))]
-    (for [item  (range 0 (count xs))
+    (for [item  (range (count xs))
           :when (not (zero? (bit-and (bit-shift-left 1 item) combo)))]
       (nth xs item))))
 

@@ -902,3 +902,131 @@ saved later when it is ready."
       api/generic-204-no-content)))
 
 (api/define-routes)
+
+
+
+(comment
+
+
+  (ns nocommit.pivot
+    (:require [clojure.data.csv :as csv]
+              [clojure.java.io :as io]
+              [clojure.java.shell :as sh]
+              [hiccup.core :as hiccup :refer [html]]
+              [medley.core :as m]
+              [metabase.pulse.render.style :as style]
+              [metabase.query-processor :as qp]
+              [metabase.query-processor.pivot :as qp.pivot]
+              [toucan.db :as db]))
+  ;; the process so far:
+  ;; 0. Have some valid pivot-table card, and make note of its ID
+  ;; 1. grab the card from the db, and get its :dataset_query key
+  ;; 2. run that query through metabase.query-processor.pivot/run-pivot-query
+  ;; 3. WIP
+  (def ^:private simple-pivot (db/select-one-field :dataset_query 'Card :id 9))
+  (def ^:private complex-pivot (db/select-one-field :dataset_query 'Card :id 787))
+  (def ^:private simple-res (qp.pivot/run-pivot-query simple-pivot))
+  (def ^:private complex-res (qp.pivot/run-pivot-query complex-pivot))
+  (def ^:private complex-viz (db/select-one-field :visualization_settings 'Card :id 787))
+
+
+
+  (defn pivot-grouping-index
+    [cols]
+    (first (keep-indexed #(when (= "pivot-grouping" (:expression_name %2)) %1) cols)))
+
+  (defn breakout-column-indices
+    [cols]
+    (->> cols
+         (keep-indexed
+          (fn [idx {:keys [source expression_name]}]
+            (when (and (= source :breakout)
+                       (not= expression_name "pivot-grouping"))
+              idx)))
+         reverse))
+
+  (defn rows-by-pivot-group
+    [results]
+    (let [grouping-index (pivot-grouping-index (-> results :data :cols))]
+      (->> results
+           :data
+           :rows
+           (group-by #(nth % grouping-index)))))
+
+  ;; (map :name xc)
+  ;; ("CREATED_AT" "CATEGORY" "STATE" "pivot-grouping" "sum")
+  ;;       0            1         2          3           4
+  (def column-then-row-indices [1 0 2])
+
+  (defn by-column
+    [col-index rows]
+    (group-by #(nth % col-index) rows))
+
+  (->> xr
+       (by-column 2)
+       (m/map-vals (fn [rows] (by-column 0 rows)))
+       (m/map-vals (fn [map-of-stuff]
+                     (m/map-vals (fn [rows]
+                                   (by-column 1 rows))
+                                 map-of-stuff)))
+       (def xd))
+
+
+
+  ;; state -> year -> category
+  (def values-by-index
+    (map #(sort (filter some? %))
+         [(keys xd)
+          (distinct (mapcat keys (vals xd)))
+          (distinct (mapcat keys (mapcat vals (vals xd))))]))
+
+  (for [state (concat (nth values-by-index 0) [nil])
+        year  (concat (nth values-by-index 1) [nil]) ]
+    (concat [state year]
+            (for [category (concat (nth values-by-index 2) [nil])]
+              (nth
+               (first
+                (get-in xd [state year category]))
+               4))))
+
+  (with-open [writer (io/writer "pivoted-magic.csv")]
+    (csv/write-csv writer pivoted-rows))
+
+  ;; --------------------------------
+
+  (defn index-fn
+    [i]
+    #(nth % i))
+
+  (defn nil-compare
+    [a b]
+    (cond
+      (nil? a) 1
+      (nil? b) -1
+      :else    (compare a b)))
+
+  (defn compare-vectors
+    [as bs]
+    (loop [i 0]
+      (let [comparison (nil-compare (nth as i) (nth bs i))]
+        (if (zero? comparison)
+          (recur (inc i))
+          comparison))))
+
+  (def sr
+    (sort-by (apply juxt (map index-fn [2 0 1])) compare-vectors xr))
+
+  (defn re-order
+    [index-order rows]
+    (map (fn [row] (map #(nth row %) index-order))
+         rows))
+
+  (def categories ["Doohickey" "Gadget" "Gizmo" "Widget" nil])
+  (loop [i 0]
+    )
+
+
+
+
+
+  )

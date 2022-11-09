@@ -151,6 +151,7 @@
                                (assoc-in [:query :aggregation] [[:count] [:sum (mt/$ids $orders.quantity)]])
                                (assoc-in [:query :source-table] (mt/$ids $$orders))))
                 actual   (map (fn [actual-val] (dissoc actual-val :database)) (#'qp.pivot/generate-queries request))]
+            (def xa actual)
             (is (= 6 (count actual)))
             (is (= expected actual))))))))
 
